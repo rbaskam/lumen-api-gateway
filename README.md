@@ -6,9 +6,7 @@
 [![Total Downloads](https://poser.pugx.org/poweredlocal/vrata/downloads)](https://packagist.org/packages/poweredlocal/vrata)
 [![License](https://poser.pugx.org/poweredlocal/vrata/license)](https://packagist.org/packages/poweredlocal/vrata)
 
-[![Docker Hub](http://dockeri.co/image/pwred/vrata)](https://hub.docker.com/r/pwred/vrata/)
-
-API gateway implemented in PHP and Lumen. Currently only supports JSON format.
+(Updated)API gateway implemented in PHP and Lumen. Currently only supports JSON format.
 
 ## Preface
 
@@ -16,9 +14,7 @@ API gateway is an important component of microservices architectural pattern –
 
 ## Overview
 
-Vrata (Russian for 'gates') is a simple API gateway implemented in PHP7 with Lumen framework
-
-Introductory blog post [in English](https://medium.com/@poweredlocal/developing-a-simple-api-gateway-in-php-and-lumen-f84756cce043#.6yd9uwmat), [in Russian](https://habrahabr.ru/post/315128/)
+An up to date and worked on version of [Vrata](https://github.com/PoweredLocal/vrata)
 
 ## Requirements and dependencies
 
@@ -27,19 +23,6 @@ Introductory blog post [in English](https://medium.com/@poweredlocal/developing-
 - Guzzle 6
 - Laravel Passport (with [Lumen Passport](https://github.com/dusterio/lumen-passport))
 - Memcached (for request throttling)
-
-## Running as a Docker container
-
-Ideally, you want to run this as a stateless Docker container configured entirely by environment variables. Therefore, you don't even need to deploy 
-this code anywhere yourself - just use our [public Docker Hub image](https://hub.docker.com/r/pwred/vrata).
-
-Deploying it is as easy as:
-
-```bash
-$ docker run -d -e GATEWAY_SERVICES=... -e GATEWAY_GLOBAL=... -e GATEWAY_ROUTES=... pwred/vrata
-```
-
-Where environment variables are JSON encoded settings (see configuration options below).
 
 ## Configuration via environment variables
 
@@ -101,7 +84,13 @@ awk 1 ORS='\\n' public.key
 
 #### GATEWAY_SERVICES
 
-JSON array of microservices behind the API gateway
+JSON array of microservices behind the API gateway, these are used in here ```config\gateway.php```. This is what is prefixed to your routes. So if you add a service called core. it will be core.[Your domain]. You can add a variable called ```hostname``` in the service if you dont want a subdomain prefix. e.g. 
+```bash
+'core' => [
+	'hostname' => 'google.com'
+]
+```
+
 
 #### GATEWAY_ROUTES
 
@@ -114,7 +103,7 @@ JSON object with global settings
 ### Logging
 
 Currently only LogEntries is supported out of the box. To send nginx and Lumen logs to LE, simply set two 
-environmetn variables:
+environment variables:
 
 #### LOGGING_ID
 
@@ -141,6 +130,39 @@ You can either do a git clone or use composer (Packagist):
 ```bash
 $ composer create-project poweredlocal/vrata
 ```
+
+OR
+
+```bash
+$ git clone git@github.com:rbaskam/vrata.git
+```
+
+```bash
+$ composer install
+```
+
+Follow PRIVATE_KEY & PUBLIC_KEY Instructions
+
+Set Database ENV Variables
+
+```bash
+$ php artisan passport:install
+```
+
+Set the GATEWAY_GLOBAL & GATEWAY_SERVICES
+e.g. for swagger v3
+```bash
+GATEWAY_GLOBAL={"prefix":"\/v1","timeout":5,"doc_point":"\/v1\/docs\/v1.json","domain":"api.yourdomain.test"}
+GATEWAY_SERVICES={"core":{"hostname":"api.yourdomain.test"}}
+```
+```bash
+$ php artisan gateway:parse
+```
+
+In your browser hit http://vrata.test/v1/[route from swagger]
+e.g when your run the parse command you get an output of ```Processing API action: http://api.yourdomain.test/api/v1/users```
+Your will be ```http://vrata.test/v1/api/v1/users```
+
 
 ## Features
 
@@ -315,6 +337,10 @@ First, we need to let the gateway know about this microservice by adding it to G
 }
 ```
 
+In your .env you can add
+
+```GATEWAY_SERVICES={"core":[],"login":[]}```
+
 Where *service* is the nickname we chose for our microservice. The array is empty because we will rely on default settings.
 Our service has a valid Swagger documentation endpoint running on ```api/doc``` URL.
 
@@ -334,6 +360,7 @@ This tells the gateway that services that don't have explicit URLs provided, wil
 Swagger documentation will be loaded from ```/api/doc``` and all routes will be prefixed with "v1".
 
 We could however specify service's hostname explicitly using "hostname" key in the GATEWAY_SERVICES array.
+```GATEWAY_SERVICES={"core":{"hostname":"api.domain.test"}}```
 
 Now we can run ```php artisan gateway:parse``` to force Vrata to parse Swagger documentation
 provided by this service. All documented routes will be exposed in this API gateway.

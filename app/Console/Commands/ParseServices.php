@@ -70,6 +70,9 @@ class ParseServices extends Command
             if (isset($data['swagger']) && preg_match('/^2\./', $data['swagger']) && isset($data['paths']))
                 return $this->injectSettings($this->parseSwaggerTwo($data), $url, $docRoot, $serviceId);
 
+            if (isset($data['openapi']) && preg_match('/^3\./', $data['openapi']) && isset($data['paths']))
+                return $this->injectSettings($this->parseSwaggerThree($data), $url, $docRoot, $serviceId);
+
             throw new DataFormatException($serviceId . ' doesn\'t contain API data');
         })->flatten(1);
     }
@@ -112,6 +115,24 @@ class ParseServices extends Command
      * @return Collection
      */
     protected function parseSwaggerTwo(array $swagger)
+    {
+        $basePath = array_key_exists('basePath', $swagger) ? $swagger['basePath'] : '/';
+        return collect($swagger['paths'])->map(function($data, $path) use ($basePath) {
+            return [
+                'path' => str_replace('//', '/', $basePath.$path),
+                'description' => isset($data['description']) ? $data['description'] : '',
+                'swagger2-data' => $data
+            ];
+        });
+    }
+
+    /**
+     * Parse a Swagger V3 output
+     *
+     * @param array $swagger
+     * @return Collection
+     */
+    protected function parseSwaggerThree(array $swagger)
     {
         $basePath = array_key_exists('basePath', $swagger) ? $swagger['basePath'] : '/';
         return collect($swagger['paths'])->map(function($data, $path) use ($basePath) {
