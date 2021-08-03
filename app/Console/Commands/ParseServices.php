@@ -64,14 +64,18 @@ class ParseServices extends Command
             $data = json_decode((string) $response->getBody(), true);
             if ($data === null) throw new DataFormatException('Unable to get JSON response from ' . $serviceId);
 
-            if (isset($data['swaggerVersion']) && isset($data['apis']) && preg_match('/^1\./', $data['swaggerVersion']))
+            //Swagger ^1
+            if (isset($data['swaggerVersion']) && isset($data['apis']) && preg_match('/^1\./', $data['swaggerVersion'])) {
                 return $this->injectSettings($this->parseSwaggerResources($data['apis']), $url, $docRoot, $serviceId);
-
-            if (isset($data['swagger']) && preg_match('/^2\./', $data['swagger']) && isset($data['paths']))
+            }                
+            //Swagger ^2
+            if (isset($data['swagger']) && preg_match('/^2\./', $data['swagger']) && isset($data['paths'])) {
                 return $this->injectSettings($this->parseSwaggerTwo($data), $url, $docRoot, $serviceId);
-
-            if (isset($data['openapi']) && preg_match('/^3\./', $data['openapi']) && isset($data['paths']))
-                return $this->injectSettings($this->parseSwaggerThree($data), $url, $docRoot, $serviceId);
+            }                
+            //Open API ^3
+            if (isset($data[ 'openapi' ], $data[ 'paths' ]) && preg_match('/^3\./', $data[ 'openapi' ])) {
+                return $this->injectSettings($this->parseOpenApi($data), $url, $docRoot, $serviceId);
+            }
 
             throw new DataFormatException($serviceId . ' doesn\'t contain API data');
         })->flatten(1);
@@ -121,27 +125,30 @@ class ParseServices extends Command
             return [
                 'path' => str_replace('//', '/', $basePath.$path),
                 'description' => isset($data['description']) ? $data['description'] : '',
-                'swagger2-data' => $data
+                'api-data' => $data
             ];
         });
     }
 
     /**
-     * Parse a Swagger V3 output
+     * Parse a OpenApi V3 output
      *
-     * @param array $swagger
+     * @param array $openapi
      * @return Collection
      */
-    protected function parseSwaggerThree(array $swagger)
+    private function parseOpenApi($openapi): Collection
     {
-        $basePath = array_key_exists('basePath', $swagger) ? $swagger['basePath'] : '/';
-        return collect($swagger['paths'])->map(function($data, $path) use ($basePath) {
+
+        $basePath = array_key_exists('basePath', $openapi) ? $openapi['basePath'] : '/';
+
+        return collect($openapi['paths'])->map(static function ($data, $path) use ($basePath) {
             return [
                 'path' => str_replace('//', '/', $basePath.$path),
-                'description' => isset($data['description']) ? $data['description'] : '',
-                'swagger2-data' => $data
+                'description' => $data[ 'description' ] ?? '',
+                'api-data' => $data
             ];
         });
+
     }
 
     /**
@@ -155,7 +162,7 @@ class ParseServices extends Command
             $resource['path'] = reset($pathElements);
             $this->line('Processing API action: ' . $resource['url'] . $resource['path']);
 
-            if (! isset($resource['swagger2-data'])) {
+            if (! isset($resource['api-data'])) {
                 $response = $this->client->request('GET', $resource['url'] . $resource['docRoot'] . $resource['path'], ['timeout' => 10.0]);
                 $data = json_decode((string) $response->getBody(), true);
                 if ($data === null) throw new DataFormatException('Unable to get JSON response from ' . $resource['serviceId']);
@@ -170,10 +177,10 @@ class ParseServices extends Command
 
             return array_merge($carry, [array_merge($resource, [
                 'operations' =>
-                    collect($resource['swagger2-data'])->map(function($data, $method) {
+                    collect($resource['api-data'])->map(function($data, $method) {
                         return ['method' => strtoupper($method)];
                     })->toArray(),
-                'swagger2-data' => null
+                'api-data' => null
             ])]);
         }, []);
     }

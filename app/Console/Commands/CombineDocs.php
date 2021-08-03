@@ -142,7 +142,7 @@ class CombineDocs extends Command
                 ['path' => '', 'description' => '']
             ],
             'info' => [
-                'title' => 'PoweredLocal API'
+                'title' => 'API Gateway'
             ]
         ];
 
