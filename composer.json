@@ -1,7 +1,7 @@
 {
-    "name": "PoweredLocal/vrata",
-    "description": "API gateway written in PHP7 and Lumen",
-    "keywords": ["microservices", "gateway", "lumen"],
+    "name": "rbaskam/lumen-api-gateway",
+    "description": "API gateway using Lumen",
+    "keywords": ["microservices", "gateway", "lumen", "swagger", "api 3.0"],
     "license": "MIT",
     "type": "project",
     "require": {
