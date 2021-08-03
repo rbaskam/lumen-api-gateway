@@ -146,6 +146,10 @@ Follow PRIVATE_KEY & PUBLIC_KEY Instructions
 Set Database ENV Variables
 
 ```bash
+$ php artisan migrate
+```
+
+```bash
 $ php artisan passport:install
 ```
 
