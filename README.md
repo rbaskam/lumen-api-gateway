@@ -128,6 +128,12 @@ Your user key with LogEntries
 You can either do a git clone or use composer (Packagist):
 
 ```bash
+$ composer create-project rbaskam/lumen-api-gateway
+```
+
+OR
+
+```bash
 $ git clone git@github.com:rbaskam/vrata.git
 ```
 
